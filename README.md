@@ -101,8 +101,4 @@ Feel free to use, modify, and improve it.
 ⭐ If you like this project, don’t forget to star the repository!
 
 ---
-
-Would you like me to make a **shorter version** (for classroom submission) or keep this **GitHub portfolio-style** one?
-
-git clone https://github.com/Bonitabatool56/Uni_academic_DB_Python.git
 cd Uni_academic_DB_Python
