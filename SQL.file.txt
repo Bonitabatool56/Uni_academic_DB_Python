@@ -1,0 +1,177 @@
+-- University_AcademicDB
+-- Create Database
+DROP DATABASE IF EXISTS uni_academic_db;
+CREATE DATABASE uni_academic_db;
+USE uni_academic_db;
+
+-- Department Table
+CREATE TABLE Department (
+  DeptID INT PRIMARY KEY,
+  DeptName VARCHAR(50),
+  HOD VARCHAR(50),
+  Email VARCHAR(50),
+  Phone VARCHAR(20)
+);
+
+INSERT INTO Department VALUES
+(1, 'Artificial Intelligence', 'Dr Mazhar', 'cs@uni.edu', '0312-3456789');
+
+-- Batch Table
+CREATE TABLE Batch (
+  BatchID INT PRIMARY KEY,
+  Year INT,
+  Program VARCHAR(50),
+  Shift VARCHAR(20),
+  TotalStudents INT
+);
+
+INSERT INTO Batch VALUES
+(2, 2024, 'BSAI', 'Morning', 120);
+
+-- Teacher Table
+CREATE TABLE Teacher (
+  TeacherID INT PRIMARY KEY,
+  Name VARCHAR(50),
+  Email VARCHAR(50),
+  Phone VARCHAR(20),
+  DeptID INT,
+  FOREIGN KEY (DeptID) REFERENCES Department(DeptID)
+);
+
+INSERT INTO Teacher VALUES
+(101, 'Anwar Sathio', 'anwarS@uni.edu', '0333-1122334', 1);
+
+-- Course Table
+CREATE TABLE Course (
+  CourseID INT PRIMARY KEY,
+  CourseName VARCHAR(50),
+  CreditHours INT,
+  DeptID INT,
+  TeacherID INT,
+  FOREIGN KEY (DeptID) REFERENCES Department(DeptID),
+  FOREIGN KEY (TeacherID) REFERENCES Teacher(TeacherID)
+);
+
+INSERT INTO Course VALUES
+(501, 'Database Systems', 3, 1, 101);
+
+-- Student Table
+CREATE TABLE Student (
+  StudentID INT PRIMARY KEY,
+  Name VARCHAR(50),
+  Email VARCHAR(50),
+  Phone VARCHAR(20),
+  BatchID INT,
+  DeptID INT,
+  FOREIGN KEY (BatchID) REFERENCES Batch(BatchID),
+  FOREIGN KEY (DeptID) REFERENCES Department(DeptID)
+);
+
+INSERT INTO Student VALUES
+(10, 'Ali', 'ali@uni.edu', '0301-9876543', 2, 1);
+
+-- ✅ FIX: make sure Enrollment StudentID references valid StudentID
+CREATE TABLE Enrollment (
+  EnrollID INT PRIMARY KEY,
+  StudentID INT,
+  CourseID INT,
+  EnrollDate DATE,
+  Status VARCHAR(20),
+  FOREIGN KEY (StudentID) REFERENCES Student(StudentID)
+      ON UPDATE CASCADE ON DELETE CASCADE,
+  FOREIGN KEY (CourseID) REFERENCES Course(CourseID)
+      ON UPDATE CASCADE ON DELETE CASCADE
+);
+
+INSERT INTO Enrollment VALUES
+(3, 10, 501, '2024-09-01', 'Active');
+
+-- Examination Table
+CREATE TABLE Examination (
+  ExamID INT PRIMARY KEY,
+  CourseID INT,
+  ExamDate DATE,
+  Type VARCHAR(30),
+  Venue VARCHAR(50),
+  FOREIGN KEY (CourseID) REFERENCES Course(CourseID)
+      ON UPDATE CASCADE ON DELETE CASCADE
+);
+
+INSERT INTO Examination VALUES
+(4, 501, '2025-10-15', 'Midterm', 'Hall A');
+
+-- Grade Table
+CREATE TABLE Grade (
+  GradeID INT PRIMARY KEY,
+  GradeLetter CHAR(2),
+  GPA DECIMAL(3,2),
+  Remarks VARCHAR(50),
+  PassingMark INT
+);
+
+INSERT INTO Grade VALUES
+(5, 'A', 4.00, 'Excellent', 85);
+
+-- ✅ FIX: add cascade and keep correct foreign references
+CREATE TABLE Result (
+  ResultID INT PRIMARY KEY,
+  StudentID INT,
+  CourseID INT,
+  GradeID INT,
+  ExamID INT,
+  FOREIGN KEY (StudentID) REFERENCES Student(StudentID)
+      ON UPDATE CASCADE ON DELETE CASCADE,
+  FOREIGN KEY (CourseID) REFERENCES Course(CourseID)
+      ON UPDATE CASCADE ON DELETE CASCADE,
+  FOREIGN KEY (GradeID) REFERENCES Grade(GradeID)
+      ON UPDATE CASCADE ON DELETE CASCADE,
+  FOREIGN KEY (ExamID) REFERENCES Examination(ExamID)
+      ON UPDATE CASCADE ON DELETE CASCADE
+);
+
+INSERT INTO Result VALUES
+(6, 10, 501, 5, 4);
+
+-- ======================= SAMPLE QUERIES =======================
+
+-- 1. List all students with their department and enrolled courses
+SELECT 
+  s.Name AS StudentName,
+  d.DeptName,
+  c.CourseName
+FROM Student s
+JOIN Department d ON s.DeptID = d.DeptID
+JOIN Enrollment e ON s.StudentID = e.StudentID
+JOIN Course c ON e.CourseID = c.CourseID;
+
+-- 2. List teachers with courses they teach
+SELECT 
+  t.Name AS TeacherName,
+  c.CourseName
+FROM Teacher t
+JOIN Course c ON t.TeacherID = c.TeacherID;
+
+-- 3. List all active enrollments
+SELECT 
+  s.Name AS StudentName,
+  c.CourseName,
+  e.EnrollDate,
+  e.Status
+FROM Enrollment e
+JOIN Student s ON e.StudentID = s.StudentID
+JOIN Course c ON e.CourseID = c.CourseID
+WHERE e.Status = 'Active';
+
+-- 4. Show student results with grade and exam info
+SELECT 
+  s.Name AS StudentName,
+  c.CourseName,
+  g.GradeLetter,
+  g.GPA,
+  e.Type AS ExamType,
+  e.ExamDate
+FROM Result r
+JOIN Student s ON r.StudentID = s.StudentID
+JOIN Course c ON r.CourseID = c.CourseID
+JOIN Grade g ON r.GradeID = g.GradeID
+JOIN Examination e ON r.ExamID = e.ExamID;
